@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Journal Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-4">
+    <a th:href="@{/}" class="btn btn-outline-secondary mb-4">&larr; Back to Main Page</a>
+
+    <h2 class="mb-4">Journal Profile</h2>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form action="/journals" method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="journalSelect" class="form-label">Select Journal</label>
+                    <select id="journalSelect" name="journalId" class="form-select">
+                        <option value="">-- Choose --</option>
+                        <option th:each="journal : ${journals}" 
+                                th:value="${journal.id}" 
+                                th:text="${journal.title}"
+                                th:selected="${journalId != null and journalId == journal.id}">
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="startYear" class="form-label">From Year</label>
+                    <input type="number" class="form-control" id="startYear" name="startYear" placeholder="e.g. 2010" th:value="${startYear}">
+                </div>
+                <div class="col-md-3">
+                    <label for="endYear" class="form-label">To Year</label>
+                    <input type="number" class="form-control" id="endYear" name="endYear" placeholder="e.g. 2026" th:value="${endYear}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${searchPerformed}">
+        
+        <hr class="my-4">
+        <h4 class="mb-3">Results for: <span th:text="${journalDetails.title}" class="text-primary"></span></h4>
+
+		<div class="row mb-4">
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Ranking</h6>
+		                <h3 class="card-text text-danger" th:text="${journalDetails.ranking}">A*</h3>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Active Years</h6>
+		                <h4 class="card-text text-primary mt-2" th:text="${overallStats.active_years_str}">2014 - 2018</h4>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Total Articles</h6>
+		                <h3 class="card-text" th:text="${overallStats.total_articles}">0</h3>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Avg Articles / Year</h6>
+		                <h3 class="card-text text-success" th:text="${overallStats.avg_articles_per_year}">0.00</h3>
+		            </div>
+		        </div>
+		    </div>
+		</div>
+
+		<div class="row mb-4">
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Total Authors</h6>
+		                <h3 class="card-text" th:text="${overallStats.total_authors}">0</h3>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Distinct Authors</h6>
+		                <h3 class="card-text" th:text="${overallStats.distinct_authors}">0</h3>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Avg Authors / Year</h6>
+		                <h3 class="card-text text-success" th:text="${overallStats.avg_authors_per_year}">0.00</h3>
+		            </div>
+		        </div>
+		    </div>
+		    <div class="col-md-3">
+		        <div class="card text-center shadow-sm h-100">
+		            <div class="card-body">
+		                <h6 class="card-title text-muted">Avg Authors / Article</h6>
+		                <h3 class="card-text text-info" th:text="${overallStats.avg_authors_per_article}">0.00</h3>
+		            </div>
+		        </div>
+		    </div>
+		</div>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Articles & Authors per Year</h5>
+            </div>
+            <div class="card-body text-center">
+                <div id="d3-linechart" style="width: 100%; height: 300px; background-color: #f8f9fa; border: 1px dashed #ccc; line-height: 300px; color: #666;">
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Yearly Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Year</th>
+                                <th>Articles Published</th>
+                                <th>Total Authors</th>
+                                <th>Distinct Authors</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="yearStat : ${yearlyStats}">
+                                <td class="fw-bold" th:text="${yearStat.pub_year}">2022</td>
+                                <td th:text="${yearStat.articles_this_year}">0</td>
+                                <td th:text="${yearStat.total_authors_this_year}">0</td>
+                                <td th:text="${yearStat.distinct_authors_this_year}">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div> </div>
+	<script th:inline="javascript">
+
+	    var rawData = [[${yearlyStats}]];
+
+	    if (rawData && rawData.length > 0) {
+	        
+	        d3.select("#d3-linechart").html("");
+	        d3.select("#d3-linechart").style("line-height", "normal");
+
+	        const container = document.getElementById("d3-linechart");
+	        const margin = {top: 20, right: 150, bottom: 40, left: 50},
+	              width = container.clientWidth - margin.left - margin.right,
+	              height = 300 - margin.top - margin.bottom;
+
+	        const svg = d3.select("#d3-linechart")
+	          .append("svg")
+	            .attr("width", width + margin.left + margin.right)
+	            .attr("height", height + margin.top + margin.bottom)
+	          .append("g")
+	            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+	        const x = d3.scaleLinear()
+	          .domain(d3.extent(rawData, d => d.pub_year))
+	          .range([ 0, width ]);
+	        
+	        svg.append("g")
+	          .attr("transform", `translate(0,${height})`)
+	          .call(d3.axisBottom(x).ticks(rawData.length).tickFormat(d3.format("d"))); 
+
+	        const maxVal = d3.max(rawData, d => Math.max(d.articles_this_year, d.distinct_authors_this_year, d.total_authors_this_year));
+	        const y = d3.scaleLinear()
+	          .domain([0, maxVal + (maxVal * 0.1)]) 
+	          .range([ height, 0 ]);
+	          
+	        svg.append("g")
+	          .call(d3.axisLeft(y));
+
+	        const lineArticles = d3.line()
+	          .x(d => x(d.pub_year))
+	          .y(d => y(d.articles_this_year));
+
+	        const lineDistinctAuthors = d3.line()
+	          .x(d => x(d.pub_year))
+	          .y(d => y(d.distinct_authors_this_year));
+			  
+			const lineTotalAuthors = d3.line()
+			  .x(d => x(d.pub_year))
+			  .y(d => y(d.total_authors_this_year));
+
+	        svg.append("path")
+	          .datum(rawData)
+	          .attr("fill", "none")
+	          .attr("stroke", "#0d6efd") 
+	          .attr("stroke-width", 3)
+	          .attr("d", lineArticles);
+
+	        svg.append("path")
+	          .datum(rawData)
+	          .attr("fill", "none")
+	          .attr("stroke", "#dc3545") 
+	          .attr("stroke-width", 3)
+	          .attr("d", lineDistinctAuthors);
+			
+			svg.append("path")
+			  .datum(rawData)
+			  .attr("fill", "none")
+			  .attr("stroke", "#ffc107") 
+			  .attr("stroke-width", 3)
+			  .attr("d", lineTotalAuthors);
+
+	        svg.append("circle").attr("cx", width + 20).attr("cy", 20).attr("r", 6).style("fill", "#0d6efd")
+	        svg.append("text").attr("x", width + 35).attr("y", 20).text("Articles").style("font-size", "14px").attr("alignment-baseline","middle")
+	        
+	        svg.append("circle").attr("cx", width + 20).attr("cy", 50).attr("r", 6).style("fill", "#dc3545")
+	        svg.append("text").attr("x", width + 35).attr("y", 50).text("Distinct Authors").style("font-size", "14px").attr("alignment-baseline","middle")
+	        
+			svg.append("circle").attr("cx", width + 20).attr("cy", 80).attr("r", 6).style("fill", "#ffc107")
+			svg.append("text").attr("x", width + 35).attr("y", 80).text("Total Authors").style("font-size", "14px").attr("alignment-baseline","middle")
+			
+	        svg.selectAll("dot")
+	           .data(rawData)
+	           .enter()
+	           .append("circle")
+	             .attr("cx", d => x(d.pub_year))
+	             .attr("cy", d => y(d.articles_this_year))
+	             .attr("r", 4)
+	             .style("fill", "#0d6efd");
+
+	        svg.selectAll("dot2")
+	           .data(rawData)
+	           .enter()
+	           .append("circle")
+	             .attr("cx", d => x(d.pub_year))
+	             .attr("cy", d => y(d.distinct_authors_this_year))
+	             .attr("r", 4)
+	             .style("fill", "#dc3545");
+			
+			svg.selectAll("dot3")
+			   .data(rawData)
+			   .enter()
+			   .append("circle")
+			      .attr("cx", d => x(d.pub_year))
+			      .attr("cy", d => y(d.total_authors_this_year))
+				  .attr("r", 4)
+				  .style("fill", "#ffc107");
+
+	    } else {
+	        d3.select("#d3-linechart").text("Δεν βρέθηκαν δεδομένα για τα επιλεγμένα έτη.");
+	    }
+	</script>
+</body>
+</html>

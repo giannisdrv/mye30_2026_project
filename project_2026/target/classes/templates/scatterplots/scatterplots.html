@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Analytics - Scatter Plots</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-4 mb-5">
+    <a th:href="@{/}" class="btn btn-outline-secondary mb-4">&larr; Back to Main Page</a>
+    <h2 class="mb-4">Scatter Plots</h2>
+
+    <div class="card mb-5 shadow-sm border-primary">
+        <div class="card-header bg-primary text-white fw-bold">
+            1. Compare Journal Rankings Metrics
+        </div>
+        <div class="card-body">
+            <form action="/scatterplots" method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="scatterType" value="JOURNAL_METRICS">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">X-Axis Metric</label>
+                    <select id="xMetric" name="xMetric" class="form-select">
+                        <option th:each="entry : ${metrics}" th:value="${entry.key}" th:text="${entry.value}" th:selected="${selectedX == entry.key}"></option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Y-Axis Metric</label>
+                    <select id="yMetric" name="yMetric" class="form-select">
+                        <option th:each="entry : ${metrics}" th:value="${entry.key}" th:text="${entry.value}" th:selected="${selectedY == entry.key}"></option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Plot Metrics</button>
+                </div>
+            </form>
+            <small class="text-muted mt-2 d-block">* Plotting the top 2,000 journals (based on the selected X-Axis).</small>
+
+            <div th:if="${scatterType == 'JOURNAL_METRICS' and chartData1 != null}" class="mt-4">
+                <canvas id="chart1" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-danger">
+        <div class="card-header bg-danger text-white fw-bold">
+            2. Avg Authors vs Total Articles Per Year
+        </div>
+        <div class="card-body">
+            <form action="/scatterplots" method="get" class="row g-3">
+                <input type="hidden" name="scatterType" value="VENUE_YEARS">
+                
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Select Type</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="venueType" id="typeConf" value="CONF" th:checked="${selectedVenueType == 'CONF' or selectedVenueType == null}" onchange="toggleSelects()">
+                        <label class="form-check-label" for="typeConf">Conferences</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="venueType" id="typeJournal" value="JOURNAL" th:checked="${selectedVenueType == 'JOURNAL'}" onchange="toggleSelects()">
+                        <label class="form-check-label" for="typeJournal">Journals</label>
+                    </div>
+                </div>
+
+                <div class="col-md-7" id="confSelectDiv">
+                    <label class="form-label fw-bold">Select Conferences</label>
+                    <select id="confIds" name="venueIds" class="form-select" multiple size="4">
+                        <option th:each="conf : ${conferences}" th:value="${conf.id}" th:text="${conf.acronym}" th:selected="${selectedVenueIds != null and selectedVenueType == 'CONF' and #lists.contains(selectedVenueIds, conf.id)}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-7" id="journalSelectDiv" style="display: none;">
+                    <label class="form-label fw-bold">Select Journals</label>
+                    <select id="journalIds" name="venueIds" class="form-select" multiple size="4">
+                        <option th:each="journal : ${journals}" th:value="${journal.id}" th:text="${journal.title}" th:selected="${selectedVenueIds != null and selectedVenueType == 'JOURNAL' and #lists.contains(selectedVenueIds, journal.id)}"></option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-danger w-100">Plot Venues</button>
+                </div>
+            </form>
+
+            <div th:if="${scatterType == 'VENUE_YEARS' and chartData2 != null}" class="mt-4">
+                <div th:if="${#lists.isEmpty(chartData2)}" class="alert alert-info">No data found.</div>
+                <div th:if="${!#lists.isEmpty(chartData2)}">
+                    <canvas id="chart2" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    function toggleSelects() {
+        const typeConf = document.getElementById('typeConf').checked;
+        document.getElementById('confSelectDiv').style.display = typeConf ? 'block' : 'none';
+        document.getElementById('confIds').disabled = !typeConf;
+        document.getElementById('journalSelectDiv').style.display = typeConf ? 'none' : 'block';
+        document.getElementById('journalIds').disabled = typeConf;
+    }
+    window.onload = toggleSelects;
+
+    var sType = [[${scatterType}]];
+    var data1 = [[${chartData1}]];
+    var data2 = [[${chartData2}]];
+
+    if (sType === 'JOURNAL_METRICS' && data1 && data1.length > 0) {
+        var xLabel = document.getElementById('xMetric').options[document.getElementById('xMetric').selectedIndex].text;
+        var yLabel = document.getElementById('yMetric').options[document.getElementById('yMetric').selectedIndex].text;
+        
+        const mappedData1 = data1.map(item => ({ x: item.x_val, y: item.y_val, title: item.venue_name }));
+        
+        new Chart(document.getElementById('chart1').getContext('2d'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Journals',
+                    data: mappedData1,
+                    backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                    borderColor: 'rgb(13, 110, 253)'
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.raw.title + ' (' + xLabel + ': ' + ctx.raw.x + ', ' + yLabel + ': ' + ctx.raw.y + ')';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: xLabel, font: { weight: 'bold' } } },
+                    y: { title: { display: true, text: yLabel, font: { weight: 'bold' } } }
+                }
+            }
+        });
+    }
+
+    if (sType === 'VENUE_YEARS' && data2 && data2.length > 0) {
+        const mappedData2 = data2.map(item => ({ 
+            x: item.total_articles, 
+            y: parseFloat(item.avg_authors).toFixed(2), 
+            title: item.venue_name + ' (' + item.pub_year + ')' 
+        }));
+
+        new Chart(document.getElementById('chart2').getContext('2d'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Years for Selected Venues',
+                    data: mappedData2,
+                    backgroundColor: 'rgba(220, 53, 69, 0.6)', 
+                    borderColor: 'rgb(220, 53, 69)',
+                    pointRadius: 5,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                plugins: {
+                    title: { display: true, text: 'Correlation: Total Articles vs Avg Authors Per Year' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.raw.title + ' | Articles: ' + ctx.raw.x + ' | Avg Authors: ' + ctx.raw.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Total Articles Published', font: { weight: 'bold' } } },
+                    y: { title: { display: true, text: 'Average Authors Per Article', font: { weight: 'bold' } } }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

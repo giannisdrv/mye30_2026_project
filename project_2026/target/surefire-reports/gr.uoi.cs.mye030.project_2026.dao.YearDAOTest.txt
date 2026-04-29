@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: gr.uoi.cs.mye030.project_2026.dao.YearDAOTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 21.853 s - in gr.uoi.cs.mye030.project_2026.dao.YearDAOTest

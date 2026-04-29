@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Year Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-4 mb-5">
+    <a th:href="@{/}" class="btn btn-outline-secondary mb-4">&larr; Back to Main Page</a>
+
+    <h2 class="mb-4">Year Profile & Publications</h2>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Search & Filters</h5>
+        </div>
+        <div class="card-body">
+            <form action="/years" method="get" class="row g-3 align-items-end">
+                
+                <div class="col-md-3">
+                    <label for="year" class="form-label fw-bold">Select Year *</label>
+                    <select id="year" name="year" class="form-select" required>
+                        <option value="">-- Choose Year --</option>
+                        <option th:each="y : ${availableYears}" 
+                                th:value="${y}" 
+                                th:text="${y}"
+                                th:selected="${selectedYear != null and selectedYear == y}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="confId" class="form-label">Filter by Conference</label>
+                    <select id="confId" name="confId" class="form-select">
+                        <option value="">-- All Conferences --</option>
+                        <option th:each="conf : ${conferences}" 
+                                th:value="${conf.id}" 
+                                th:text="${conf.acronym}"
+                                th:selected="${selectedConfId != null and selectedConfId == conf.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="journalId" class="form-label">Filter by Journal</label>
+                    <select id="journalId" name="journalId" class="form-select">
+                        <option value="">-- All Journals --</option>
+                        <option th:each="journal : ${journals}" 
+                                th:value="${journal.id}" 
+                                th:text="${journal.title}"
+                                th:selected="${selectedJournalId != null and selectedJournalId == journal.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="authorName" class="form-label">Filter by Author</label>
+                    <input type="text" class="form-control" id="authorName" name="authorName" 
+                           placeholder="e.g. Smith" th:value="${selectedAuthorName}">
+                </div>
+
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${searchPerformed}">
+        
+        <hr class="my-4">
+        <h4 class="mb-3">Statistics for Year: <span th:text="${selectedYear}" class="text-primary"></span></h4>
+
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted" style="font-size: 0.9rem;">Total Articles</h6>
+                        <h4 class="card-text text-primary" th:text="${stats.total_articles}">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted" style="font-size: 0.9rem;">Distinct Conferences</h6>
+                        <h4 class="card-text" th:text="${stats.distinct_conferences}">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted" style="font-size: 0.9rem;">Distinct Journals</h6>
+                        <h4 class="card-text" th:text="${stats.distinct_journals}">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted" style="font-size: 0.9rem;">Distinct Authors</h6>
+                        <h4 class="card-text" th:text="${stats.distinct_authors}">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted" style="font-size: 0.9rem;">Total Authors</h6>
+                        <h4 class="card-text" th:text="${stats.total_authors}">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Publications</h5>
+                <small class="text-muted">Showing up to 200 results</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%;">Article Title</th>
+                                <th style="width: 20%;">Venue (Conference/Journal)</th>
+                                <th style="width: 40%;">Authors</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="pub : ${publications}">
+                                <td class="fw-bold" th:text="${pub.article_title}">Title</td>
+                                
+                                <td>
+                                    <span class="badge bg-secondary" th:text="${pub.conference_name} ?: ${pub.journal_name}">Venue</span>
+                                </td>
+                                
+                                <td class="text-muted" th:text="${pub.authors_list}">Author 1, Author 2</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(publications)}">
+                                <td colspan="3" class="text-center text-muted py-4">No publications found for these filters.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

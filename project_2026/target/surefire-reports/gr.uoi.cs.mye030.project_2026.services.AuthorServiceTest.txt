@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: gr.uoi.cs.mye030.project_2026.services.AuthorServiceTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.156 s - in gr.uoi.cs.mye030.project_2026.services.AuthorServiceTest

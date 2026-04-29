@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Analytics - Advanced Barcharts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-4 mb-5">
+    <a th:href="@{/}" class="btn btn-outline-secondary mb-4">&larr; Back to Main Page</a>
+    <h2 class="mb-4">Advanced Analytics: Barcharts</h2>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form action="/barcharts" method="get">
+                <div class="row g-3">
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Analyze Category *</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="venueType" id="typeConf" value="CONF" 
+                                   th:checked="${selectedVenueType == 'CONF' or selectedVenueType == null}" onchange="toggleSelects()">
+                            <label class="form-check-label" for="typeConf">Conferences</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="venueType" id="typeJournal" value="JOURNAL" 
+                                   th:checked="${selectedVenueType == 'JOURNAL'}" onchange="toggleSelects()">
+                            <label class="form-check-label" for="typeJournal">Journals</label>
+                        </div>
+                        <div class="form-check mt-2 border-top pt-2">
+                            <input class="form-check-input" type="radio" name="venueType" id="typePub" value="PUBLISHER" 
+                                   th:checked="${selectedVenueType == 'PUBLISHER'}" onchange="toggleSelects()">
+                            <label class="form-check-label text-primary fw-bold" for="typePub">Journal Publishers</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5" id="confSelectDiv">
+                        <label class="form-label fw-bold">Select Conferences</label>
+                        <select id="confIds" name="venueIds" class="form-select" multiple size="6">
+                            <option th:each="conf : ${conferences}" th:value="${conf.id}" th:text="${conf.acronym}"
+                                    th:selected="${selectedVenueIds != null and selectedVenueType == 'CONF' and #lists.contains(selectedVenueIds, conf.id)}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-5" id="journalSelectDiv" style="display: none;">
+                        <label class="form-label fw-bold">Select Journals</label>
+                        <select id="journalIds" name="venueIds" class="form-select" multiple size="6">
+                            <option th:each="journal : ${journals}" th:value="${journal.id}" th:text="${journal.title}"
+                                    th:selected="${selectedVenueIds != null and selectedVenueType == 'JOURNAL' and #lists.contains(selectedVenueIds, journal.id)}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-5" id="publisherSelectDiv" style="display: none;">
+                        <label class="form-label fw-bold text-primary">Select Publishers</label>
+                        <select id="publisherIds" name="publishers" class="form-select border-primary" multiple size="6">
+                            <option th:each="pub : ${allPublishers}" th:value="${pub}" th:text="${pub}"
+                                    th:selected="${selectedPublishers != null and selectedVenueType == 'PUBLISHER' and #lists.contains(selectedPublishers, pub)}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4" id="yearFiltersDiv">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Start Year</label>
+                                <select name="startYear" class="form-select">
+                                    <option value="">-- No Start Limit --</option>
+                                    <option th:each="y : ${availableYears}" th:value="${y}" th:text="${y}" th:selected="${selectedStartYear == y}"></option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">End Year</label>
+                                <select name="endYear" class="form-select">
+                                    <option value="">-- No End Limit --</option>
+                                    <option th:each="y : ${availableYears}" th:value="${y}" th:text="${y}" th:selected="${selectedEndYear == y}"></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3"><div class="col-12 text-end"><button type="submit" class="btn btn-primary px-5">Generate Barchart</button></div></div>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${searchPerformed}" class="card shadow-sm">
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(chartData)}" class="alert alert-info text-center">No data found for the selected filters.</div>
+            <div th:if="${!#lists.isEmpty(chartData)}">
+                <canvas id="groupedBarchart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    function toggleSelects() {
+        const typeConf = document.getElementById('typeConf').checked;
+        const typeJournal = document.getElementById('typeJournal').checked;
+        const typePub = document.getElementById('typePub').checked;
+
+        document.getElementById('confSelectDiv').style.display = typeConf ? 'block' : 'none';
+        document.getElementById('confIds').disabled = !typeConf;
+
+        document.getElementById('journalSelectDiv').style.display = typeJournal ? 'block' : 'none';
+        document.getElementById('journalIds').disabled = !typeJournal;
+
+        document.getElementById('publisherSelectDiv').style.display = typePub ? 'block' : 'none';
+        document.getElementById('publisherIds').disabled = !typePub;
+
+        document.getElementById('yearFiltersDiv').style.opacity = typePub ? '0.3' : '1';
+        document.getElementById('yearFiltersDiv').style.pointerEvents = typePub ? 'none' : 'auto';
+    }
+    window.onload = toggleSelects;
+
+    var rawData = [[${chartData}]];
+    var currentType = [[${selectedVenueType}]];
+
+    if (rawData && rawData.length > 0) {
+        var ctx = document.getElementById('groupedBarchart').getContext('2d');
+        var chartLabels = [];
+        var chartDatasets = [];
+
+        if (currentType === 'CONF' || currentType === 'JOURNAL') {
+            chartLabels = rawData.map(item => item.venue_name);
+            
+            chartDatasets = [
+                {
+                    label: 'Total Articles',
+                    data: rawData.map(item => item.total_articles),
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)' 
+                },
+                {
+                    label: 'Avg Articles / Year',
+                    data: rawData.map(item => item.avg_articles_year),
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)' 
+                },
+                {
+                    label: 'Avg Authors / Year',
+                    data: rawData.map(item => item.avg_authors_year),
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)' 
+                }
+            ];
+        } else if (currentType === 'PUBLISHER') {
+            chartLabels = rawData.map(item => item.publisher_name);
+
+            chartDatasets = [
+                {
+                    label: 'Total Journals',
+                    data: rawData.map(item => item.total_journals),
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)' 
+                },
+                {
+                    label: 'Q1 Journals',
+                    data: rawData.map(item => item.q1_count),
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)' 
+                },
+                {
+                    label: 'Q2 Journals',
+                    data: rawData.map(item => item.q2_count),
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)' 
+                },
+                {
+                    label: 'Q3 Journals',
+                    data: rawData.map(item => item.q3_count),
+                    backgroundColor: 'rgba(255, 193, 7, 0.7)' 
+                },
+                {
+                    label: 'Q4 Journals',
+                    data: rawData.map(item => item.q4_count),
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)' 
+                }
+            ];
+        }
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: chartDatasets
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: currentType === 'PUBLISHER' ? 'Publisher Journal Quartiles' : 'Venue Metrics Comparison' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
