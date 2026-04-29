@@ -1,0 +1,8 @@
+Όνομα: Ιωάννης Δρίβας
+ΑΜ: 5126
+video link: https://drive.google.com/file/d/1rPOOFBSk5LpT1lNJU1-hBN8mtAT8Eh_8/view?usp=vids_web
+Σημείωση: στο βίντεο προς το τέλος που εξηγούμε τα charts δεν εμφανίζεται κάτι όταν επιλέγαμε εύρος χρονιάς
+διότι βάζαμε στο Dropdown ανάποδα τις χρονιές δηλαδή το start year στο end year. Επίσης είχαμε υλοποιήσει
+κάποια πολύ βασικά test τα όποια ξεχάσαμε να συμπεριλάβουμε. Τέλος στο python script προσθέσαμε relative 
+paths και στην sql την αυτοματη δημιουργία της βάσης ενεργοποίηση του Local infile και απενεργοποίηση
+του foreign key check.
