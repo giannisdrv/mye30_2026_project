@@ -1,4 +1,4 @@
-#  Analytics Platform for MYE030 at CSE UOI
+# Analytics Platform for MYE030 at CSE UOI
 
 A full-stack web application designed to process, store, and analyze academic publication data (Conferences, Journals, Authors, and Articles). This project provides an interactive dashboard with various metrics, line charts, and scatter plots to visualize the evolution and correlation of academic venues over time.
 
@@ -40,43 +40,39 @@ A full-stack web application designed to process, store, and analyze academic pu
 ├── tables.sql              # Database schema creation and LOAD DATA script
 └── README.md
 ```
+
 ## How to Run
 
-
-**Prerequisites**
-
+### Prerequisites
 Make sure you have the following installed on your system:
+* Java Development Kit (JDK) 17 or higher
+* Maven
+* Python 3.x
+* MySQL Server (with `local_infile` enabled)
 
-*Java Development Kit (JDK) 17 or higher
-*Maven
-*Python 3.x
-*MySQL Server (with local_infile enabled)
+### Step 1: Data Preprocessing
+Before starting the application, the raw data needs to be processed. 
+1. Open a terminal and navigate to the `processing` folder.
+2. Run the Python script:
+   ```bash
+   python preprocess.py
+   ```
 
-**Data Preprocessing**
+### Step 2: Database Setup
+1. Ensure your MySQL server has `local_infile` enabled to allow bulk data loading.
+2. Open your MySQL client (e.g., terminal or MySQL Workbench).
+3. Execute the `tables.sql` script to create the database schema and load the processed data:
+   ```sql
+   SOURCE path/to/your/project/tables.sql;
+   ```
 
-Before starting the application, the raw data needs to be processed.
+### Step 3: Running the Application
+1. Update the database credentials in `src/main/resources/application.properties` (set your MySQL username and password).
+2. Run the Spring Boot application using Maven:
+   ```bash
+   mvn spring-boot:run
+   ```
+3. Open your web browser and navigate to: `http://localhost:8080`
 
-*Open a terminal and navigate to the processing folder.
-*Run the Python script: **python preprocess.py**
-
-**Database Setup**
-
-*Ensure your MySQL server has local_infile enabled to allow bulk data loading.
-
-*Open your MySQL client.
-
-*Execute the tables.sql script to create the database schema and load the processed data: **SOURCE path/to/your/project/tables.sql;**
-
-**Running the Application**
-
-*Update the database credentials in src/main/resources/application.properties (set your MySQL username and password).
-*Run the Spring Boot application using Maven: **mvn spring-boot:run**
-*Open your web browser and navigate to: http://localhost:8080
-
-##Author
+## Author
 **Ioannis Drivas**
-
-
-
-
-
